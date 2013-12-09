@@ -3,32 +3,36 @@
 var mgwnd = require('./build/Release/magickwand');
 
 var magickwand = {
-  resize: function(imagefile, options, cb) {
+  resize: function (imagefile, options, cb) {
 
-    if (Object.keys(options).length == 0) {
+    if (!Object.keys(options).length) {
       throw new Error('Invalid width/height/format/quality arguments');
     }
 
-    [ 'quality', 'width', 'height' ].forEach(function(param) {
+    ['quality', 'width', 'height'].forEach(function (param) {
       if (!options[param])
         options[param] = 0;
     });
 
-    mgwnd.resize(imagefile,options.width,options.height,options.quality,options.format,cb);
+    options.autocrop = options.autocrop || false;
+
+    mgwnd.resize(imagefile, options.width, options.height, options.quality, options.format, options.autocrop, cb);
   },
 
-  thumbnail: function(imagefile, options, cb) {
+  thumbnail: function (imagefile, options, cb) {
     var args = {};
-    if (typeof(cb) != 'function') {
+    if (typeof options === 'function') {
       cb = options;
       options = {};
     }
 
-    [ 'width', 'height' ].forEach(function(param) {
+    ['width', 'height'].forEach(function (param) {
       args[param] = options[param] || 0;
     });
 
-    mgwnd.thumbnail(imagefile,args.width,args.height,cb);
+    options.autocrop = options.autocrop || false;
+
+    mgwnd.thumbnail(imagefile, args.width, args.height, options.autocrop, cb);
   }
 };
 

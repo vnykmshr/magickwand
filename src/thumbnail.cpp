@@ -6,6 +6,8 @@ typedef struct thumbnailReq {
   char *exception;
   size_t resizedImageLen;
 
+  bool autocrop;
+
   unsigned int width;
   unsigned int height;
   char imagefilepath[1];
@@ -17,7 +19,7 @@ static void thumbnail(uv_work_t *req) {
   ExceptionType severity;
   MagickWand *magick_wand = NewMagickWand();
   MagickBooleanType status;
-  int width, height;
+  float imageWidth, imageHeight, newImageWidth, newImageHeight, imageAspectRatio, canvasAspectRatio;
  
   status = MagickReadImage(magick_wand,mgr->imagefilepath);
 
@@ -27,23 +29,61 @@ static void thumbnail(uv_work_t *req) {
     return;
   }
 
-  if (mgr->height == 0 || mgr->width == 0) {
-    width = MagickGetImageWidth(magick_wand);
-    height = MagickGetImageHeight(magick_wand);
+  // Get the image sizes
+  imageWidth = MagickGetImageWidth(magick_wand);
+  imageHeight = MagickGetImageHeight(magick_wand);
+  imageAspectRatio = (imageWidth * 1.0) / imageHeight;
+  
+  // If autcrop == true, we want to scale the image, keeping proportions and then crop
+  if(mgr->autocrop) {
 
-    if (mgr->width == 0 && mgr->height == 0) {
-      mgr->width = width;
-      mgr->height = height;
-    } else {
-      float aspectRatio = (width * 1.0)/height;
-      if (mgr->height == 0)
-        mgr->height =  mgr->width * (1.0/aspectRatio);
-      else if (mgr->width == 0)
-        mgr->width = mgr->height * aspectRatio;
+    // If these are not set, we will remove the autocrop and let the code further down handle the rest
+    if(mgr->width == 0 && mgr->height == 0) {
+      mgr->autocrop = false;
+      
+    } else if(mgr->width == 0 || mgr->height == 0) {
+
+      // If one of canvas height or width is not set, we will assume a square is wanted
+      if(mgr->width == 0) {
+        mgr->width = mgr->height;
+      } else if(mgr->height == 0) {
+        mgr->height = mgr->width;
+      }
+
     }
+
+    canvasAspectRatio = (mgr->width * 1.0) / mgr->height;
+    
+    if(imageAspectRatio < canvasAspectRatio) {
+      newImageWidth = mgr->width;
+      newImageHeight = newImageWidth / imageAspectRatio;
+    } else {
+      newImageHeight = mgr->height;
+      newImageWidth = newImageHeight * imageAspectRatio;
+    }
+    
+    MagickThumbnailImage(magick_wand, newImageWidth, newImageHeight);
+    MagickCropImage(magick_wand, mgr->width, mgr->height, (newImageWidth - mgr->width)/2, (newImageHeight - mgr->height)/2);
+    MagickResetImagePage(magick_wand, (const char *) NULL);
+
   }
 
-  MagickThumbnailImage(magick_wand,mgr->width,mgr->height);
+  if(mgr->autocrop == false) {
+    // If autcrop == false, we want to scale the image, only stretching if both height and width are set
+
+    // Don't stretch, make the image fit within the given parameter
+    if(!mgr->width == 0 || !mgr->height == 0) {
+      if(mgr->width == 0) {
+        mgr->width = (mgr->height * imageAspectRatio);
+      } else if(mgr->height == 0) {
+        mgr->height = (mgr->width / imageAspectRatio);
+      }
+    }
+
+    if(mgr->width && mgr->height) {
+      MagickThumbnailImage(magick_wand, mgr->width, mgr->height);
+    }
+  }
 
   mgr->resizedImage = MagickGetImageBlob(magick_wand,&mgr->resizedImageLen);
 
@@ -94,8 +134,8 @@ static void postThumbnail(uv_work_t *req) {
 
 Handle<Value> thumbnailAsync (const Arguments& args) {
   HandleScope scope;
-  const char *usage = "Too few arguments: Usage: thumbnail(pathtoimgfile,width, height,cb)";
-  if (args.Length() != 4) {
+  const char *usage = "Too few arguments: Usage: thumbnail(imagefile, width, height, autocrop, cb)";
+  if (args.Length() != 5) {
     return ThrowException(Exception::Error(String::New(usage)));
   }
 
@@ -103,7 +143,9 @@ Handle<Value> thumbnailAsync (const Arguments& args) {
   int width = args[1]->Int32Value();
   int height = args[2]->Int32Value();
 
-  Local<Function> cb = Local<Function>::Cast(args[3]);
+  bool autocrop = args[3]->BooleanValue();
+
+  Local<Function> cb = Local<Function>::Cast(args[4]);
 
   if (width < 0 || height < 0) {
     return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
@@ -116,7 +158,8 @@ Handle<Value> thumbnailAsync (const Arguments& args) {
   mgr->cb = Persistent<Function>::New(cb);
   mgr->width = width;
   mgr->height = height;
-
+  mgr->autocrop = autocrop;
+  
   strncpy(mgr->imagefilepath,*name,name.length() + 1);
 
   uv_queue_work(uv_default_loop(),req,thumbnail,(uv_after_work_cb)postThumbnail);
