@@ -1,5 +1,5 @@
 #ifndef _MAGICKWAND_H
-#define _MAGICKWAND_H 
+#define _MAGICKWAND_H
 
 #ifndef BUILDING_NODE_EXTENSION
 #define BUILDING_NODE_EXTENSION
@@ -16,7 +16,7 @@ using namespace v8;
 
 extern "C" void init(Handle<Object>);
 
-Handle<Value> resizeAsync (const Arguments& args);
-Handle<Value> thumbnailAsync (const Arguments& args);
+Handle<Value> resizeAsync (const Arguments &args);
+Handle<Value> thumbnailAsync (const Arguments &args);
 
 #endif /* _MAGICKWAND_H */
