@@ -26,13 +26,13 @@ var magickwand = {
       options = {};
     }
 
-    ['width', 'height'].forEach(function (param) {
+    ['width', 'height', 'quality'].forEach(function (param) {
       args[param] = options[param] || 0;
     });
 
     options.autocrop = options.autocrop || false;
 
-    mgwnd.thumbnail(imagefile, args.width, args.height, options.autocrop, cb);
+    mgwnd.thumbnail(imagefile, args.width, args.height, args.quality,ss options.autocrop, cb);
   }
 };
 

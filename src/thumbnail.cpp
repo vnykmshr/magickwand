@@ -10,6 +10,7 @@ typedef struct thumbnailReq {
 
   unsigned int width;
   unsigned int height;
+  unsigned int quality;
   char imagefilepath[1];
 } ThumbnailReq;
 
@@ -85,6 +86,9 @@ static void thumbnail(uv_work_t *req) {
     }
   }
 
+  if (mgr->quality)
+    MagickSetImageCompressionQuality(magick_wand,mgr->quality);
+
   mgr->resizedImage = MagickGetImageBlob(magick_wand, &mgr->resizedImageLen);
 
   if (!mgr->resizedImage) {
@@ -112,8 +116,10 @@ static void postThumbnail(uv_work_t *req) {
     argv[1] = buf->handle_;
     Local<Integer> width = Integer::New(mgr->width);
     Local<Integer> height = Integer::New(mgr->height);
+    Local<Integer> quality = Integer::New(mgr->quality);
     info->Set(String::NewSymbol("width"), width);
     info->Set(String::NewSymbol("height"), height);
+    info->Set(String::NewSymbol("quality"), quality);
     argv[2] = info;
   }
 
@@ -134,21 +140,26 @@ static void postThumbnail(uv_work_t *req) {
 
 Handle<Value> thumbnailAsync (const Arguments &args) {
   HandleScope scope;
-  const char *usage = "Too few arguments: Usage: thumbnail(imagefile, width, height, autocrop, cb)";
+  const char *usage = "Too few arguments: Usage: thumbnail(pathtoimgfile, width, height, quality, autocrop, cb)";
+  int argc = 0;
   if (args.Length() != 5) {
     return ThrowException(Exception::Error(String::New(usage)));
   }
 
-  String::Utf8Value name(args[0]);
-  int width = args[1]->Int32Value();
-  int height = args[2]->Int32Value();
+  String::Utf8Value name(args[argc++]);
+  int width = args[argc++]->Int32Value();
+  int height = args[argc++]->Int32Value();
+  int quality = args[argc++]->Int32Value();
+  bool autocrop = args[argc++]->BooleanValue();
 
-  bool autocrop = args[3]->BooleanValue();
-
-  Local<Function> cb = Local<Function>::Cast(args[4]);
+  Local<Function> cb = Local<Function>::Cast(args[argc++]);
 
   if (width < 0 || height < 0) {
     return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
+  }
+
+  if (quality < 0 || quality > 100) {
+    return ThrowException(Exception::Error(String::New("Invalid quality parameter")));
   }
 
   uv_work_t *req = new uv_work_t;
@@ -158,6 +169,7 @@ Handle<Value> thumbnailAsync (const Arguments &args) {
   mgr->cb = Persistent<Function>::New(cb);
   mgr->width = width;
   mgr->height = height;
+  mgr->quality = quality;
   mgr->autocrop = autocrop;
 
   strncpy(mgr->imagefilepath, *name, name.length() + 1);
