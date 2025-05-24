@@ -1,17 +1,18 @@
 #include "./magickwand.h" // Includes nan.h
 
-static void thumbnail_work_nan(uv_work_t *req);
-static void postThumbnail_nan(uv_work_t *req, int status);
+static void rotate_work_nan(uv_work_t *req);
+static void postRotate_nan(uv_work_t *req, int status);
 
-static void thumbnail_work_nan(uv_work_t *req) {
-  processImage(req, true /* isThumbnail */, false /* isRotate */);
+static void rotate_work_nan(uv_work_t *req) {
+  // Call processImage with isThumbnail = false, isRotate = true
+  processImage(req, false /* isThumbnail */, true /* isRotate */);
 }
 
-static void postThumbnail_nan(uv_work_t *req, int status) {
+static void postRotate_nan(uv_work_t *req, int status) {
   Nan::HandleScope scope;
   struct magickReq *mgr = (struct magickReq *)req->data;
 
-  v8::Local<v8::Value> argv[3];
+  v8::Local<v8::Value> argv[3]; // Callback arguments: err, buffer, info
 
   if (mgr->exception) {
     argv[0] = Nan::Error(mgr->exception);
@@ -23,55 +24,51 @@ static void postThumbnail_nan(uv_work_t *req, int status) {
     argv[1] = Nan::NewBuffer((char*)mgr->resizedImage, mgr->resizedImageLen).ToLocalChecked();
     
     v8::Local<v8::Object> infoObj = Nan::New<v8::Object>();
+    // Dimensions are updated in mgr->width and mgr->height by processImage after rotation.
     Nan::Set(infoObj, Nan::New("width").ToLocalChecked(), Nan::New(mgr->width));
     Nan::Set(infoObj, Nan::New("height").ToLocalChecked(), Nan::New(mgr->height));
+
     argv[2] = infoObj;
   }
 
   Nan::Callback cb(Nan::New(mgr->cb));
-  Nan::AsyncResource resource("magickwand:thumbnail");
+  Nan::AsyncResource resource("magickwand:rotate");
   cb.Call(3, argv, &resource);
 
   mgr->cb.Reset();
   if (mgr->resizedImage) MagickRelinquishMemory(mgr->resizedImage);
-  // mgr->format is not used or allocated in thumbnail
-  if (mgr->imagefilepath) free(mgr->imagefilepath); // Free if it was strdup'ed
+  // No format string for rotate
+  if (mgr->imagefilepath) free(mgr->imagefilepath);
   free(mgr);
 
   delete req;
 }
 
-NAN_METHOD(thumbnailAsync) {
+NAN_METHOD(rotateAsync) {
   Nan::HandleScope();
 
-  const char *usage = "Usage: thumbnail(imagefileOrBuffer, width, height, quality, autocrop, cb)";
-  if (info.Length() != 6) { 
+  // Args: imagefileOrBuffer, degrees, cb
+  const char *usage = "Usage: rotate(imagefileOrBuffer, degrees, cb)";
+  if (info.Length() != 3) {
     return Nan::ThrowError(usage);
   }
   if (!info[0]->IsString() && !info[0]->IsObject()) { 
     return Nan::ThrowError("First argument must be a string (filepath) or a Buffer.");
   }
-  if (!info[5]->IsFunction()) {
-    return Nan::ThrowError("Last argument must be a callback function.");
+  if (!info[1]->IsNumber()) {
+    return Nan::ThrowError("Second argument (degrees) must be a number.");
   }
-
+  if (!info[2]->IsFunction()) {
+    return Nan::ThrowError("Third argument must be a callback function.");
+  }
+  
   v8::Local<v8::Value> inputArg = info[0];
-  int width = Nan::To<int32_t>(info[1]).FromMaybe(0);
-  int height = Nan::To<int32_t>(info[2]).FromMaybe(0);
-  int quality = Nan::To<int32_t>(info[3]).FromMaybe(0);
-  bool autocrop = Nan::To<bool>(info[4]).FromMaybe(false);
-  v8::Local<v8::Function> cb_func = info[5].As<v8::Function>();
-
-  if (width < 0 || height < 0) {
-    return Nan::ThrowError("Invalid width/height arguments (must be non-negative).");
-  }
-  if (quality < 0 || quality > 100) {
-    return Nan::ThrowError("Invalid quality parameter (must be 0-100).");
-  }
+  double degrees = Nan::To<double>(info[1]).FromMaybe(0.0);
+  v8::Local<v8::Function> cb_func = info[2].As<v8::Function>();
 
   uv_work_t *req = new uv_work_t;
   struct magickReq *mgr = (struct magickReq *) calloc(1, sizeof(struct magickReq));
-
+  
   if (!mgr) {
     delete req;
     return Nan::ThrowError("Failed to allocate memory for request struct.");
@@ -79,11 +76,13 @@ NAN_METHOD(thumbnailAsync) {
   req->data = mgr;
 
   mgr->cb.Reset(cb_func);
-  mgr->width = width;
-  mgr->height = height;
-  mgr->quality = quality;
-  mgr->autocrop = autocrop;
-  mgr->format = NULL; // Not used by thumbnail
+  mgr->degrees = degrees;
+  // Set other potentially relevant fields to defaults if processImage expects them
+  mgr->width = 0; // Not resizing, but processImage might look at it
+  mgr->height = 0;
+  mgr->quality = 0; // Default quality
+  mgr->autocrop = false;
+  mgr->format = NULL;
   mgr->exception = NULL;
   mgr->resizedImage = NULL;
   mgr->resizedImageLen = 0;
@@ -91,10 +90,10 @@ NAN_METHOD(thumbnailAsync) {
   mgr->inputBuffer = NULL;
   mgr->inputBufferLen = 0;
 
-  if (node::Buffer::HasInstance(inputArg)) { // Use node::Buffer
+  if (node::Buffer::HasInstance(inputArg)) {
     v8::Local<v8::Object> bufferObj = inputArg.As<v8::Object>();
-    mgr->inputBuffer = (const unsigned char*) node::Buffer::Data(bufferObj); // Use node::Buffer
-    mgr->inputBufferLen = node::Buffer::Length(bufferObj); // Use node::Buffer
+    mgr->inputBuffer = (const unsigned char*) node::Buffer::Data(bufferObj);
+    mgr->inputBufferLen = node::Buffer::Length(bufferObj);
   } else if (inputArg->IsString()) {
     Nan::Utf8String name(inputArg);
     if (name.length() == 0) {
@@ -111,7 +110,6 @@ NAN_METHOD(thumbnailAsync) {
     return Nan::ThrowError("First argument must be a string (filepath) or a Buffer.");
   }
 
-  uv_queue_work(uv_default_loop(), req, thumbnail_work_nan, postThumbnail_nan);
-
+  uv_queue_work(uv_default_loop(), req, rotate_work_nan, postRotate_nan);
   info.GetReturnValue().Set(Nan::Undefined());
 }

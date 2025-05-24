@@ -1,190 +1,133 @@
-#include "./magickwand.h"
+#include "./magickwand.h" // Includes nan.h
 
-struct magickReq {
-  Persistent<Function> cb;
-  unsigned char *resizedImage;
-  char *exception;
-  char *format;
-  size_t resizedImageLen;
-  int quality;
+static void resize_work_nan(uv_work_t *req);
+static void postResize_nan(uv_work_t *req, int status);
 
-  bool autocrop;
-
-  unsigned int width;
-  unsigned int height;
-  char imagefilepath[1];
-};
-
-/* Resize image here */
-static void resize (uv_work_t *req) {
-  struct magickReq *mgr = (struct magickReq *)req->data;
-  ExceptionType severity;
-  MagickWand *magick_wand = NewMagickWand();
-  MagickBooleanType status;
-  float imageWidth, imageHeight, newImageWidth, newImageHeight, imageAspectRatio, canvasAspectRatio;
-
-  status = MagickReadImage(magick_wand, mgr->imagefilepath);
-
-  if (status == MagickFalse) {
-    mgr->exception = MagickGetException(magick_wand, &severity);
-    DestroyMagickWand(magick_wand);
-    return;
-  }
-
-  // Get the image sizes
-  imageWidth = MagickGetImageWidth(magick_wand);
-  imageHeight = MagickGetImageHeight(magick_wand);
-  imageAspectRatio = (imageWidth * 1.0) / imageHeight;
-
-  // If autcrop == true, we want to scale the image, keeping proportions and then crop
-  if (mgr->autocrop) {
-
-    // If these are not set, we will remove the autocrop and let the code further down handle the rest
-    if (mgr->width == 0 && mgr->height == 0) {
-      mgr->autocrop = false;
-
-    } else if (mgr->width == 0 || mgr->height == 0) {
-
-      // If one of canvas height or width is not set, we will assume a square is wanted
-      if (mgr->width == 0) {
-        mgr->width = mgr->height;
-      } else if (mgr->height == 0) {
-        mgr->height = mgr->width;
-      }
-
-    }
-
-    canvasAspectRatio = (mgr->width * 1.0) / mgr->height;
-
-    if (imageAspectRatio < canvasAspectRatio) {
-      newImageWidth = mgr->width;
-      newImageHeight = newImageWidth / imageAspectRatio;
-    } else {
-      newImageHeight = mgr->height;
-      newImageWidth = newImageHeight * imageAspectRatio;
-    }
-
-    MagickResizeImage(magick_wand, newImageWidth, newImageHeight, LanczosFilter, 1.0);
-    MagickCropImage(magick_wand, mgr->width, mgr->height, (newImageWidth - mgr->width) / 2, (newImageHeight - mgr->height) / 2);
-    MagickResetImagePage(magick_wand, (const char *) NULL);
-
-  }
-
-  if (mgr->autocrop == false) {
-    // If autcrop == false, we want to scale the image, only stretching if both height and width are set
-
-    // Don't stretch, make the image fit within the given parameter
-    if (!mgr->width == 0 || !mgr->height == 0) {
-      if (mgr->width == 0) {
-        mgr->width = (mgr->height * imageAspectRatio);
-      } else if (mgr->height == 0) {
-        mgr->height = (mgr->width / imageAspectRatio);
-      }
-    }
-
-    if (mgr->width && mgr->height) {
-      MagickResizeImage(magick_wand, mgr->width, mgr->height, LanczosFilter, 1.0);
-    }
-  }
-
-  if (mgr->format) {
-    MagickSetImageFormat(magick_wand, mgr->format);
-  }
-
-  if (mgr->quality) {
-    MagickSetImageCompressionQuality(magick_wand, mgr->quality);
-  }
-
-  mgr->resizedImage = MagickGetImageBlob(magick_wand, &mgr->resizedImageLen);
-  if (!mgr->resizedImage) {
-    mgr->exception = MagickGetException(magick_wand, &severity);
-  }
-
-  DestroyMagickWand(magick_wand);
+static void resize_work_nan(uv_work_t *req) {
+  processImage(req, false /* isThumbnail */, false /* isRotate */);
 }
 
-/* this is for the callback */
-static void postResize(uv_work_t *req) {
-  HandleScope scope;
+static void postResize_nan(uv_work_t *req, int status) {
+  Nan::HandleScope scope;
   struct magickReq *mgr = (struct magickReq *)req->data;
 
-  Handle<Value> argv[3];
-  Local<Object> info = Object::New();
+  v8::Local<v8::Value> argv[3];
 
   if (mgr->exception) {
-    argv[0] = Exception::Error(String::New(mgr->exception));
-    argv[1] = argv[2] = Undefined();
-    MagickRelinquishMemory(mgr->exception);
+    argv[0] = Nan::Error(mgr->exception);
+    argv[1] = Nan::Undefined();
+    argv[2] = Nan::Undefined();
+    if (mgr->exception) free(mgr->exception); 
   } else {
-    argv[0] = Undefined();
-    Buffer *buf = Buffer::New(mgr->resizedImageLen + 1);
-    memcpy(Buffer::Data(buf), mgr->resizedImage, mgr->resizedImageLen);
-    argv[1] = buf->handle_;
-    Local<Integer> width = Integer::New(mgr->width);
-    Local<Integer> height = Integer::New(mgr->height);
-    info->Set(String::NewSymbol("width"), width);
-    info->Set(String::NewSymbol("height"), height);
-    argv[2] = info;
+    argv[0] = Nan::Undefined();
+    argv[1] = Nan::NewBuffer((char*)mgr->resizedImage, mgr->resizedImageLen).ToLocalChecked();
+    
+    v8::Local<v8::Object> infoObj = Nan::New<v8::Object>();
+    Nan::Set(infoObj, Nan::New("width").ToLocalChecked(), Nan::New(mgr->width));
+    Nan::Set(infoObj, Nan::New("height").ToLocalChecked(), Nan::New(mgr->height));
+    argv[2] = infoObj;
   }
 
-  TryCatch try_catch;
+  Nan::Callback cb(Nan::New(mgr->cb));
+  Nan::AsyncResource resource("magickwand:resize");
+  cb.Call(3, argv, &resource);
 
-  mgr->cb->Call(Context::GetCurrent()->Global(), 3, argv);
-
-  if (try_catch.HasCaught()) {
-    FatalException(try_catch);
-  }
-
-  mgr->cb.Dispose();
-  MagickRelinquishMemory(mgr->resizedImage);
-  if (mgr->format)
-    free(mgr->format);
+  mgr->cb.Reset();
+  if (mgr->resizedImage) MagickRelinquishMemory(mgr->resizedImage);
+  if (mgr->format) free(mgr->format);
+  if (mgr->imagefilepath) free(mgr->imagefilepath); // Free if it was strdup'ed
+  // inputBuffer is not owned by mgr, it's a pointer to V8 managed memory (Buffer)
+  // or part of the JS object that needs to be kept alive by the GC until the callback.
+  // Nan::Persistent for the callback helps keep the context alive.
   free(mgr);
 
   delete req;
 }
 
-Handle<Value> resizeAsync (const Arguments &args) {
-  HandleScope scope;
-  const char *usage = "Too few arguments: Usage: resize(imagefile, width, height, quality, format, autocrop, cb)";
-  if (args.Length() != 7) {
-    return ThrowException(Exception::Error(String::New(usage)));
+NAN_METHOD(resizeAsync) {
+  Nan::HandleScope();
+
+  const char *usage = "Usage: resize(imagefileOrBuffer, width, height, quality, format, autocrop, cb)";
+  if (info.Length() != 7) {
+    return Nan::ThrowError(usage);
   }
-
-  String::Utf8Value name(args[0]);
-  String::Utf8Value format(args[4]);
-  int width = args[1]->Int32Value();
-  int height = args[2]->Int32Value();
-  int quality = args[3]->Int32Value();
-
-  bool autocrop = args[5]->BooleanValue();
-
-  Local<Function> cb = Local<Function>::Cast(args[6]);
+  if (!info[0]->IsString() && !info[0]->IsObject()) { // Simplified check, could be more specific for Buffer
+    return Nan::ThrowError("First argument must be a string (filepath) or a Buffer.");
+  }
+  if (!info[6]->IsFunction()) {
+    return Nan::ThrowError("Last argument must be a callback function.");
+  }
+  
+  v8::Local<v8::Value> inputArg = info[0];
+  int width = Nan::To<int32_t>(info[1]).FromMaybe(0);
+  int height = Nan::To<int32_t>(info[2]).FromMaybe(0);
+  int quality = Nan::To<int32_t>(info[3]).FromMaybe(0);
+  Nan::Utf8String format_str(info[4]); // format is string, might be empty
+  bool autocrop = Nan::To<bool>(info[5]).FromMaybe(false);
+  v8::Local<v8::Function> cb_func = info[6].As<v8::Function>();
 
   if (width < 0 || height < 0) {
-    return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
+    return Nan::ThrowError("Invalid width/height arguments (must be non-negative).");
   }
-
   if (quality < 0 || quality > 100) {
-    return ThrowException(Exception::Error(String::New("Invalid quality parameter")));
+    return Nan::ThrowError("Invalid quality parameter (must be 0-100).");
   }
 
   uv_work_t *req = new uv_work_t;
-  struct magickReq *mgr = (struct magickReq *) calloc(1, sizeof(struct magickReq) + name.length());
+  struct magickReq *mgr = (struct magickReq *) calloc(1, sizeof(struct magickReq));
+  
+  if (!mgr) {
+    delete req;
+    return Nan::ThrowError("Failed to allocate memory for request struct.");
+  }
   req->data = mgr;
 
-  mgr->cb = Persistent<Function>::New(cb);
+  mgr->cb.Reset(cb_func);
   mgr->width = width;
   mgr->height = height;
   mgr->quality = quality;
   mgr->autocrop = autocrop;
+  mgr->format = NULL;
+  mgr->exception = NULL;
+  mgr->resizedImage = NULL;
+  mgr->resizedImageLen = 0;
+  mgr->imagefilepath = NULL;
+  mgr->inputBuffer = NULL;
+  mgr->inputBufferLen = 0;
 
-  if (*format)
-    mgr->format = strdup(*format);
+  // Handle input: buffer or filepath string
+  if (node::Buffer::HasInstance(inputArg)) { // Use node::Buffer
+    v8::Local<v8::Object> bufferObj = inputArg.As<v8::Object>();
+    mgr->inputBuffer = (const unsigned char*) node::Buffer::Data(bufferObj); // Use node::Buffer
+    mgr->inputBufferLen = node::Buffer::Length(bufferObj); // Use node::Buffer
+    // Keep the buffer object alive by making the callback persistent,
+    // which should keep the whole context (including arguments) alive.
+  } else if (inputArg->IsString()) {
+    Nan::Utf8String name(inputArg);
+    if (name.length() == 0) {
+      mgr->cb.Reset(); free(mgr); delete req; // Basic cleanup
+      return Nan::ThrowError("Imagefile path is empty.");
+    }
+    mgr->imagefilepath = strdup(*name);
+    if (!mgr->imagefilepath) {
+      mgr->cb.Reset(); free(mgr); delete req;
+      return Nan::ThrowError("Failed to allocate memory for image filepath string.");
+    }
+  } else {
+    // Should have been caught by initial check, but as a safeguard:
+    mgr->cb.Reset(); free(mgr); delete req;
+    return Nan::ThrowError("First argument must be a string (filepath) or a Buffer.");
+  }
 
-  strncpy(mgr->imagefilepath, *name, name.length() + 1);
+  if (format_str.length() > 0) {
+    mgr->format = strdup(*format_str);
+    if (!mgr->format) {
+        if(mgr->imagefilepath) free(mgr->imagefilepath);
+        mgr->cb.Reset(); free(mgr); delete req;
+        return Nan::ThrowError("Failed to allocate memory for format string.");
+    }
+  }
 
-  uv_queue_work(uv_default_loop(), req, resize, (uv_after_work_cb)postResize);
-
-  return Undefined();
+  uv_queue_work(uv_default_loop(), req, resize_work_nan, postResize_nan);
+  info.GetReturnValue().Set(Nan::Undefined());
 }

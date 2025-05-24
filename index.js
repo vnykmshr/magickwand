@@ -1,6 +1,7 @@
 "use strict";
 
 var mgwnd = require('./build/Release/magickwand');
+// console.log("Native addon 'mgwnd' object:", mgwnd); // Debugging line removed
 
 var magickwand = {
   resize: function (imagefile, options, cb) {
@@ -16,7 +17,7 @@ var magickwand = {
 
     options.autocrop = options.autocrop || false;
 
-    mgwnd.resize(imagefile, options.width, options.height, options.quality, options.format, options.autocrop, cb);
+    mgwnd.resizeAsync(imagefile, options.width, options.height, options.quality, options.format, options.autocrop, cb);
   },
 
   thumbnail: function (imagefile, options, cb) {
@@ -32,7 +33,30 @@ var magickwand = {
 
     options.autocrop = options.autocrop || false;
 
-    mgwnd.thumbnail(imagefile, args.width, args.height, args.quality,ss options.autocrop, cb);
+    mgwnd.thumbnailAsync(imagefile, args.width, args.height, args.quality, options.autocrop, cb);
+  },
+
+  rotate: function (imagefileOrBuffer, options, cb) {
+    if (typeof options === 'function') {
+      cb = options;
+      options = {};
+    }
+    if (typeof options.degrees !== 'number') {
+      // Immediately invoke callback with an error if degrees is not a number
+      // This ensures async behavior consistent with other functions if input validation fails early.
+      if (typeof cb === 'function') {
+        // Use process.nextTick to ensure async callback
+        process.nextTick(function() {
+          cb(new Error('Invalid degrees: must be a number.'));
+        });
+      } else {
+        // If no callback, throw error (though API expects callback)
+        throw new Error('Invalid degrees: must be a number and callback is required.');
+      }
+      return;
+    }
+
+    mgwnd.rotateAsync(imagefileOrBuffer, options.degrees, cb);
   }
 };
 

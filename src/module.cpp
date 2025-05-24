@@ -1,10 +1,18 @@
-#include "./magickwand.h"
+#include <nan.h> // Required for NAN macros
+#include "./magickwand.h" // Should already include nan.h
 
-extern "C" void init (Handle<Object> target) {
-  HandleScope scope;
+// Module initialization using NAN
+NAN_MODULE_INIT(InitAll) {
+  // Perform MagickWandGenesis initialization once.
+  // It's safe to call this multiple times, but once is sufficient.
   MagickWandGenesis();
-  NODE_SET_METHOD(target, "resize", resizeAsync);
-  NODE_SET_METHOD(target, "thumbnail", thumbnailAsync);
+
+  // Export methods
+  NAN_EXPORT(target, resizeAsync);
+  NAN_EXPORT(target, thumbnailAsync);
+  NAN_EXPORT(target, rotateAsync); // Add rotateAsync
 }
 
-NODE_MODULE(magickwand, init)
+// Entry point for the Node.js addon
+// Module name "magickwand", Initializer function "InitAll"
+NODE_MODULE(magickwand, InitAll)
