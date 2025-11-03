@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node-version: [14.x, 16.x, 18.x, 20.x, 22.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install ImageMagick (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libmagickwand-dev imagemagick
+
+    - name: Install ImageMagick (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install imagemagick pkg-config
+
+    - name: Verify ImageMagick installation
+      run: |
+        magick --version || convert --version
+        MagickWand-config --version || Wand-config --version
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run linter
+      run: npm run lint
+
+    - name: Run tests
+      run: npm test
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+
+    - name: Install dependencies
+      run: npm install --only=dev
+
+    - name: Run ESLint
+      run: npm run lint

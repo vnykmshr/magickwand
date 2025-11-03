@@ -1,29 +1,50 @@
 {
-    "name": "magickwand",
-    "description": "native bindings for imagemagick convert",
-    "version": "0.0.12",
-    "author": "Qasim Zaidi <qasim@zaidi.me>",
-    "contributors" : [
-      { "name": "Sameer Akhtar" },
-      { "name": "Binayak Mishra" }
-     ],
-    "dependencies": {
-    },
-    "devDependencies": {
-      "mocha": "^10.0.0"
-    },
-    "repository": "git://github.com/qzaidi/magickwand.git",
-    "main": "index",
-    "scripts": {
-      "test": "mocha -R spec ./test/test.js"
-    },
-    "bugs": {
-        "url": "https://github.com/qzaidi/magickwand/issues"
-    },
-    "licenses" : [
-        {
-            "type" : "MIT"
-        }
-    ],
-    "engines": { "node" : ">=0.10.0" }
+  "name": "magickwand",
+  "version": "0.0.12",
+  "description": "Native Node.js bindings for ImageMagick - High-performance image resizing and manipulation",
+  "main": "index.js",
+  "author": "Qasim Zaidi <qasim@zaidi.me>",
+  "contributors": [
+    { "name": "Sameer Akhtar" },
+    { "name": "Binayak Mishra" },
+    { "name": "Vinayak Mishra", "url": "https://github.com/vnykmshr" }
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vnykmshr/magickwand.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vnykmshr/magickwand/issues"
+  },
+  "homepage": "https://github.com/vnykmshr/magickwand#readme",
+  "keywords": [
+    "imagemagick",
+    "image",
+    "resize",
+    "thumbnail",
+    "convert",
+    "native",
+    "bindings",
+    "graphics",
+    "autocrop",
+    "compression"
+  ],
+  "scripts": {
+    "install": "node-gyp rebuild",
+    "test": "mocha -R spec ./test/test.js",
+    "lint": "eslint index.js test/"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "mocha": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ]
 }

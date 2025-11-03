@@ -1,12 +1,12 @@
-"use strict";
+'use strict';
 
 var magickwand = require('../index');
 var assert = require('assert');
 
 var imagePath = __dirname + '/abc.jpg';
 
-describe("magickwand", function() {
-  describe("Non existent image", function() {
+describe('magickwand', function() {
+  describe('Non existent image', function() {
     it('resize should generate an error', function(done) {
       magickwand.resize('./nonexistent.jpg', { width: 128, quality: 80 }, function(err, data) {
         assert(err !== undefined);
@@ -25,10 +25,10 @@ describe("magickwand", function() {
     });
   });
 
-  describe("Invalid parameters", function() {
+  describe('Invalid parameters', function() {
     it('resize with invalid width should throw error', function(done) {
       try {
-        magickwand.resize(imagePath, { width: -10, height: 0 }, function(err, data) {
+        magickwand.resize(imagePath, { width: -10, height: 0 }, function(_err, _data) {
           assert(false, 'Should have thrown an error');
         });
       } catch(e) {
@@ -40,7 +40,7 @@ describe("magickwand", function() {
 
     it('resize with invalid quality should throw error', function(done) {
       try {
-        magickwand.resize(imagePath, { width: 100, height: 100, quality: 150 }, function(err, data) {
+        magickwand.resize(imagePath, { width: 100, height: 100, quality: 150 }, function(_err, _data) {
           assert(false, 'Should have thrown an error');
         });
       } catch(e) {
@@ -51,8 +51,8 @@ describe("magickwand", function() {
     });
   });
 
-  describe("Valid resize operations", function() {
-    it("resize should produce valid image with both dimensions", function(done) {
+  describe('Valid resize operations', function() {
+    it('resize should produce valid image with both dimensions', function(done) {
       magickwand.resize(imagePath, { width: 50, height: 50 }, function(err, data, info) {
         assert(err === undefined, err ? err.message : '');
         assert(data !== undefined);
@@ -64,7 +64,7 @@ describe("magickwand", function() {
       });
     });
 
-    it("resize should maintain aspect ratio when height is 0", function(done) {
+    it('resize should maintain aspect ratio when height is 0', function(done) {
       magickwand.resize(imagePath, { width: 100, height: 0 }, function(err, data, info) {
         assert(err === undefined, err ? err.message : '');
         assert(data !== undefined);
@@ -76,7 +76,7 @@ describe("magickwand", function() {
       });
     });
 
-    it("resize should maintain aspect ratio when width is 0", function(done) {
+    it('resize should maintain aspect ratio when width is 0', function(done) {
       magickwand.resize(imagePath, { width: 0, height: 100 }, function(err, data, info) {
         assert(err === undefined, err ? err.message : '');
         assert(data !== undefined);
@@ -88,7 +88,7 @@ describe("magickwand", function() {
       });
     });
 
-    it("resize with quality parameter should work", function(done) {
+    it('resize with quality parameter should work', function(done) {
       magickwand.resize(imagePath, { width: 100, height: 100, quality: 50 }, function(err, data, info) {
         assert(err === undefined, err ? err.message : '');
         assert(data !== undefined);
@@ -98,7 +98,7 @@ describe("magickwand", function() {
       });
     });
 
-    it("resize with autocrop should produce valid image", function(done) {
+    it('resize with autocrop should produce valid image', function(done) {
       magickwand.resize(imagePath, { width: 100, height: 100, autocrop: true }, function(err, data, info) {
         assert(err === undefined, err ? err.message : '');
         assert(data !== undefined);
@@ -110,8 +110,8 @@ describe("magickwand", function() {
       });
     });
 
-    it("resize with format conversion should work", function(done) {
-      magickwand.resize(imagePath, { width: 100, height: 100, format: 'png' }, function(err, data, info) {
+    it('resize with format conversion should work', function(done) {
+      magickwand.resize(imagePath, { width: 100, height: 100, format: 'png' }, function(err, data, _info) {
         assert(err === undefined, err ? err.message : '');
         assert(data !== undefined);
         assert(data.length > 0);
@@ -125,8 +125,8 @@ describe("magickwand", function() {
     });
   });
 
-  describe("Valid thumbnail operations", function() {
-    it("thumbnail should produce valid image", function(done) {
+  describe('Valid thumbnail operations', function() {
+    it('thumbnail should produce valid image', function(done) {
       magickwand.thumbnail(imagePath, { width: 50, height: 50 }, function(err, data, info) {
         assert(err === undefined, err ? err.message : '');
         assert(data !== undefined);
@@ -138,7 +138,7 @@ describe("magickwand", function() {
       });
     });
 
-    it("thumbnail should maintain aspect ratio when height is 0", function(done) {
+    it('thumbnail should maintain aspect ratio when height is 0', function(done) {
       magickwand.thumbnail(imagePath, { width: 100, height: 0 }, function(err, data, info) {
         assert(err === undefined, err ? err.message : '');
         assert(data !== undefined);
@@ -150,7 +150,7 @@ describe("magickwand", function() {
       });
     });
 
-    it("thumbnail with quality parameter should work", function(done) {
+    it('thumbnail with quality parameter should work', function(done) {
       magickwand.thumbnail(imagePath, { width: 100, height: 100, quality: 70 }, function(err, data, info) {
         assert(err === undefined, err ? err.message : '');
         assert(data !== undefined);
@@ -161,7 +161,7 @@ describe("magickwand", function() {
       });
     });
 
-    it("thumbnail with autocrop should produce valid image", function(done) {
+    it('thumbnail with autocrop should produce valid image', function(done) {
       magickwand.thumbnail(imagePath, { width: 100, height: 100, autocrop: true }, function(err, data, info) {
         assert(err === undefined, err ? err.message : '');
         assert(data !== undefined);
@@ -173,7 +173,7 @@ describe("magickwand", function() {
       });
     });
 
-    it("both thumbnail and resize should produce valid output for same dimensions", function(done) {
+    it('both thumbnail and resize should produce valid output for same dimensions', function(done) {
       var resizeLength, thumbnailLength;
 
       magickwand.resize(imagePath, { width: 100, height: 100, quality: 80 }, function(err, data) {

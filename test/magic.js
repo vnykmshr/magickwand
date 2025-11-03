@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var fs = require('fs');
 var magickwand = require('../index');
@@ -10,9 +10,9 @@ magickwand.resize('/tmp/abc.jpg', {
   if (err) {
     console.log(err);
   } else {
-    console.log("Blob returned from resize, length is " + data.length);
+    console.log('Blob returned from resize, length is ' + data.length);
     console.log(info);
-    fs.writeFile('/tmp/def.jpg', data, "binary");
+    fs.writeFile('/tmp/def.jpg', data, 'binary');
   }
 });
 
@@ -22,9 +22,9 @@ magickwand.thumbnail('/tmp/abc.jpg', {
   if (err) {
     console.log(err);
   } else {
-    console.log("Blob returned from thumbnail, length is " + data.length);
+    console.log('Blob returned from thumbnail, length is ' + data.length);
     console.log(info);
-    fs.writeFile('/tmp/ghi.jpg', data, "binary");
+    fs.writeFile('/tmp/ghi.jpg', data, 'binary');
   }
 });
 
@@ -37,9 +37,9 @@ magickwand.resize('/tmp/abc.jpg', {
   if (err) {
     console.log(err);
   } else {
-    console.log("Blob returned from resize with crop, length is " + data.length);
+    console.log('Blob returned from resize with crop, length is ' + data.length);
     console.log(info);
-    fs.writeFile('/tmp/jkl.jpg', data, "binary");
+    fs.writeFile('/tmp/jkl.jpg', data, 'binary');
   }
 });
 
@@ -51,8 +51,8 @@ magickwand.thumbnail('/tmp/abc.jpg', {
   if (err) {
     console.log(err);
   } else {
-    console.log("Blob returned from thumbnail with crop, length is " + data.length);
+    console.log('Blob returned from thumbnail with crop, length is ' + data.length);
     console.log(info);
-    fs.writeFile('/tmp/mno.jpg', data, "binary");
+    fs.writeFile('/tmp/mno.jpg', data, 'binary');
   }
 });
