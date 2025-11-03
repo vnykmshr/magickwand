@@ -1,5 +1,9 @@
 "use strict";
 
+// This example demonstrates using magickwand as Express middleware for CDN-style image resizing
+// Dependencies (not included in magickwand):
+//   npm install express mime
+
 var parse = require('url').parse;
 var magickwand = require('magickwand');
 var mime = require('mime');
@@ -56,7 +60,11 @@ function cdnCache(options) {
     resizeOpts = config.getParams(req.url);
     if (resizeOpts) {
       util.log('resizing image ' + req.url);
-      magickwand.resize(resizeOpts.path, resizeOpts.width, resizeOpts.height, function (err, data) {
+      // Modern API: pass options object instead of positional parameters
+      magickwand.resize(resizeOpts.path, {
+        width: parseInt(resizeOpts.width, 10),
+        height: parseInt(resizeOpts.height, 10)
+      }, function (err, data) {
         if (!err && data) {
           res.setHeader('Content-Type', mime.lookup(resizeOpts.path));
           res.setHeader('Content-Length', data.length);

@@ -5,9 +5,16 @@
   "main": "index.js",
   "author": "Qasim Zaidi <qasim@zaidi.me>",
   "contributors": [
-    { "name": "Sameer Akhtar" },
-    { "name": "Binayak Mishra" },
-    { "name": "Vinayak Mishra", "url": "https://github.com/vnykmshr" }
+    {
+      "name": "Sameer Akhtar"
+    },
+    {
+      "name": "Binayak Mishra"
+    },
+    {
+      "name": "Vinayak Mishra",
+      "url": "https://github.com/vnykmshr"
+    }
   ],
   "license": "MIT",
   "repository": {
@@ -30,15 +37,24 @@
     "autocrop",
     "compression"
   ],
+  "files": [
+    "src/",
+    "index.js",
+    "binding.gyp",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "install": "node-gyp rebuild",
     "test": "mocha -R spec ./test/test.js",
+    "test:coverage": "c8 --reporter=text --reporter=html npm test",
     "lint": "eslint index.js test/"
   },
-  "dependencies": {},
   "devDependencies": {
-    "eslint": "^8.50.0",
-    "mocha": "^10.0.0"
+    "c8": "^10.1.3",
+    "eslint": "^9.39.0",
+    "mocha": "^11.7.4"
   },
   "engines": {
     "node": ">=10.0.0"

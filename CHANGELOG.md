@@ -95,18 +95,63 @@ This project uses [Semantic Versioning](https://semver.org/):
 ### Migrating from 0.0.11 to 0.0.12
 
 **Requirements:**
-- Upgrade to Node.js v10.0.0 or higher
+- Upgrade to Node.js v10.0.0 or higher (tested up to v24)
 - Upgrade to ImageMagick 7 (ImageMagick 6 may still work but is not officially supported)
 
-**Code Changes:**
-No API changes required. The autocrop feature is now properly documented and tested.
+**Breaking API Changes:**
 
-**Build Changes:**
-```bash
-# Clean old build
-rm -rf build node_modules
-npm install
+The resize and thumbnail functions now require an **options object** instead of positional parameters:
+
+**Old API (0.0.11 and earlier):**
+```javascript
+// Positional parameters (NO LONGER WORKS)
+magickwand.resize('/path/to/image.jpg', 800, 600, function(err, data) {
+  // ...
+});
 ```
+
+**New API (0.0.12+):**
+```javascript
+// Options object (REQUIRED)
+magickwand.resize('/path/to/image.jpg', {
+  width: 800,
+  height: 600,
+  quality: 80,      // optional
+  format: 'png',    // optional
+  autocrop: false   // optional
+}, function(err, data, info) {
+  // ...
+});
+
+// Thumbnail follows the same pattern
+magickwand.thumbnail('/path/to/image.jpg', {
+  width: 200,
+  height: 200,
+  quality: 70,
+  autocrop: true
+}, function(err, data, info) {
+  // ...
+});
+```
+
+**Migration Steps:**
+
+1. Update all `resize()` and `thumbnail()` calls to use options object:
+   ```javascript
+   // Before
+   magickwand.resize(path, width, height, callback);
+
+   // After
+   magickwand.resize(path, { width, height }, callback);
+   ```
+
+2. Clean old build and reinstall:
+   ```bash
+   rm -rf build node_modules
+   npm install
+   ```
+
+3. Test your application thoroughly - the API change is **not backwards compatible**
 
 ---
 
