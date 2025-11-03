@@ -2,6 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/magickwand.svg)](https://www.npmjs.com/package/magickwand)
 [![Node.js Version](https://img.shields.io/node/v/magickwand.svg)](https://nodejs.org)
+[![CI](https://github.com/vnykmshr/magickwand/actions/workflows/ci.yml/badge.svg)](https://github.com/vnykmshr/magickwand/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Native Node.js bindings for ImageMagick - High-performance image resizing and manipulation using direct C API calls instead of spawning child processes.

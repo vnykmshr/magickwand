@@ -43,11 +43,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Updated all dependencies to latest secure versions
 
-## [0.0.11] - Historical (upstream)
+## [0.0.11] - Historical (original upstream)
 
 ### Changed
-- Added test infrastructure (upstream/qzaidi)
+- Added test infrastructure (original qzaidi/magickwand project)
 - Added PNG test support
+
+**Note**: Version 0.0.11 and earlier are from the original qzaidi/magickwand project. This repository diverged at v0.0.10 and was modernized to v0.0.12.
 
 ## [0.0.10] - Historical
 
@@ -108,6 +110,6 @@ npm install
 
 ---
 
-[0.0.12]: https://github.com/vnykmshr/magickwand/compare/v0.0.10...v0.0.12
-[0.0.11]: https://github.com/qzaidi/magickwand/compare/v0.0.10...v0.0.11
-[0.0.10]: https://github.com/qzaidi/magickwand/releases/tag/v0.0.10
+[0.0.12]: https://github.com/vnykmshr/magickwand/releases/tag/v0.0.12
+[0.0.11]: Historical version from original upstream project
+[0.0.10]: Historical version from original upstream project
