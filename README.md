@@ -214,10 +214,17 @@ MIT
 
 ## Credits
 
-- Original author: [Qasim Zaidi](https://github.com/qzaidi)
-- Contributors: Sameer Akhtar, Binayak Mishra
-- Maintainer: [Vinayak Mishra](https://github.com/vnykmshr)
-- Modernization: Updated for Node.js v24 and ImageMagick 7
+This project was originally created by [Qasim Zaidi](https://github.com/qzaidi) (2012-2015) and is now independently maintained with significant modernization.
+
+**Current Maintainer:**
+- [Vinayak Mishra](https://github.com/vnykmshr) - Modernization for Node.js v24 and ImageMagick 7
+
+**Original Contributors:**
+- Qasim Zaidi (original author)
+- Sameer Akhtar
+- Binayak Mishra
+
+**Project Status:** This is an independent continuation of the original project with major updates for modern Node.js and ImageMagick versions.
 
 ## Related Projects
 

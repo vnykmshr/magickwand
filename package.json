@@ -3,17 +3,19 @@
   "version": "0.0.12",
   "description": "Native Node.js bindings for ImageMagick - High-performance image resizing and manipulation",
   "main": "index.js",
-  "author": "Qasim Zaidi <qasim@zaidi.me>",
+  "author": "Vinayak Mishra <vnykmshr@gmail.com> (https://github.com/vnykmshr)",
   "contributors": [
+    {
+      "name": "Qasim Zaidi",
+      "email": "qasim@zaidi.me",
+      "url": "https://github.com/qzaidi",
+      "note": "Original author (2012-2015)"
+    },
     {
       "name": "Sameer Akhtar"
     },
     {
       "name": "Binayak Mishra"
-    },
-    {
-      "name": "Vinayak Mishra",
-      "url": "https://github.com/vnykmshr"
     }
   ],
   "license": "MIT",
