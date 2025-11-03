@@ -2,6 +2,7 @@
 
 typedef struct thumbnailReq {
   Persistent<Function> cb;
+  Isolate* isolate;
   unsigned char *resizedImage;
   char *exception;
   size_t resizedImageLen;
@@ -73,7 +74,7 @@ static void thumbnail(uv_work_t *req) {
     // If autcrop == false, we want to scale the image, only stretching if both height and width are set
 
     // Don't stretch, make the image fit within the given parameter
-    if (!mgr->width == 0 || !mgr->height == 0) {
+    if (mgr->width == 0 || mgr->height == 0) {
       if (mgr->width == 0) {
         mgr->width = (mgr->height * imageAspectRatio);
       } else if (mgr->height == 0) {
@@ -98,75 +99,88 @@ static void thumbnail(uv_work_t *req) {
   DestroyMagickWand(magick_wand);
 }
 
-static void postThumbnail(uv_work_t *req) {
-  HandleScope scope;
+static void postThumbnail(uv_work_t *req, int status) {
   ThumbnailReq *mgr = (ThumbnailReq *)req->data;
+  Isolate* isolate = mgr->isolate;
+  HandleScope scope(isolate);
 
-  Handle<Value> argv[3];
-  Local<Object> info = Object::New();
+  Local<Value> argv[3];
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<Object> info = Object::New(isolate);
 
   if (mgr->exception) {
-    argv[0] = Exception::Error(String::New(mgr->exception));
-    argv[1] = argv[2] = Undefined();
+    argv[0] = Exception::Error(String::NewFromUtf8(isolate, mgr->exception).ToLocalChecked());
+    argv[1] = Undefined(isolate);
+    argv[2] = Undefined(isolate);
     MagickRelinquishMemory(mgr->exception);
   } else {
-    argv[0] = Undefined();
-    Buffer *buf = Buffer::New(mgr->resizedImageLen + 1);
-    memcpy(Buffer::Data(buf), mgr->resizedImage, mgr->resizedImageLen);
-    argv[1] = buf->handle_;
-    Local<Integer> width = Integer::New(mgr->width);
-    Local<Integer> height = Integer::New(mgr->height);
-    Local<Integer> quality = Integer::New(mgr->quality);
-    info->Set(String::NewSymbol("width"), width);
-    info->Set(String::NewSymbol("height"), height);
-    info->Set(String::NewSymbol("quality"), quality);
+    argv[0] = Undefined(isolate);
+    MaybeLocal<Object> buf = Buffer::Copy(isolate, (const char*)mgr->resizedImage, mgr->resizedImageLen);
+    argv[1] = buf.ToLocalChecked();
+    info->Set(context,
+              String::NewFromUtf8(isolate, "width").ToLocalChecked(),
+              Integer::New(isolate, mgr->width)).Check();
+    info->Set(context,
+              String::NewFromUtf8(isolate, "height").ToLocalChecked(),
+              Integer::New(isolate, mgr->height)).Check();
+    info->Set(context,
+              String::NewFromUtf8(isolate, "quality").ToLocalChecked(),
+              Integer::New(isolate, mgr->quality)).Check();
     argv[2] = info;
   }
 
-  TryCatch try_catch;
+  Local<Function> cb = Local<Function>::New(isolate, mgr->cb);
+  TryCatch try_catch(isolate);
 
-  mgr->cb->Call(Context::GetCurrent()->Global(), 3, argv);
+  cb->Call(context, Null(isolate), 3, argv).IsEmpty();
 
   if (try_catch.HasCaught()) {
-    FatalException(try_catch);
+    node::FatalException(isolate, try_catch);
   }
 
-  mgr->cb.Dispose();
+  mgr->cb.Reset();
   MagickRelinquishMemory(mgr->resizedImage);
   free(mgr);
 
   delete req;
 }
 
-Handle<Value> thumbnailAsync (const Arguments &args) {
-  HandleScope scope;
+void thumbnailAsync(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  HandleScope scope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+
   const char *usage = "Too few arguments: Usage: thumbnail(pathtoimgfile, width, height, quality, autocrop, cb)";
   int argc = 0;
-  if (args.Length() != 5) {
-    return ThrowException(Exception::Error(String::New(usage)));
+  if (args.Length() != 6) {
+    isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, usage).ToLocalChecked()));
+    return;
   }
 
-  String::Utf8Value name(args[argc++]);
-  int width = args[argc++]->Int32Value();
-  int height = args[argc++]->Int32Value();
-  int quality = args[argc++]->Int32Value();
-  bool autocrop = args[argc++]->BooleanValue();
+  String::Utf8Value name(isolate, args[argc++]);
+  int width = args[argc++]->Int32Value(context).ToChecked();
+  int height = args[argc++]->Int32Value(context).ToChecked();
+  int quality = args[argc++]->Int32Value(context).ToChecked();
+  bool autocrop = args[argc++]->BooleanValue(isolate);
 
   Local<Function> cb = Local<Function>::Cast(args[argc++]);
 
   if (width < 0 || height < 0) {
-    return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
+    isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid width/height arguments").ToLocalChecked()));
+    return;
   }
 
   if (quality < 0 || quality > 100) {
-    return ThrowException(Exception::Error(String::New("Invalid quality parameter")));
+    isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid quality parameter").ToLocalChecked()));
+    return;
   }
 
   uv_work_t *req = new uv_work_t;
   ThumbnailReq *mgr = (ThumbnailReq *) calloc(1, sizeof(ThumbnailReq) + name.length());
   req->data = mgr;
 
-  mgr->cb = Persistent<Function>::New(cb);
+  mgr->cb.Reset(isolate, cb);
+  mgr->isolate = isolate;
   mgr->width = width;
   mgr->height = height;
   mgr->quality = quality;
@@ -174,7 +188,5 @@ Handle<Value> thumbnailAsync (const Arguments &args) {
 
   strncpy(mgr->imagefilepath, *name, name.length() + 1);
 
-  uv_queue_work(uv_default_loop(), req, thumbnail, (uv_after_work_cb)postThumbnail);
-
-  return Undefined();
+  uv_queue_work(uv_default_loop(), req, thumbnail, postThumbnail);
 }

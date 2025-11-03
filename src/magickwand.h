@@ -7,16 +7,17 @@
 
 #include <node.h>
 #include <node_buffer.h>
+#include <uv.h>
 #include <stdlib.h>
 #include <string.h>
-#include <wand/MagickWand.h>
+#include <MagickWand/MagickWand.h>
 
 using namespace node;
 using namespace v8;
 
-extern "C" void init(Handle<Object>);
+void init(Local<Object> exports, Local<Value> module, void* priv);
 
-Handle<Value> resizeAsync (const Arguments &args);
-Handle<Value> thumbnailAsync (const Arguments &args);
+void resizeAsync(const FunctionCallbackInfo<Value>& args);
+void thumbnailAsync(const FunctionCallbackInfo<Value>& args);
 
 #endif /* _MAGICKWAND_H */

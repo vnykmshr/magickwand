@@ -2,6 +2,7 @@
 
 struct magickReq {
   Persistent<Function> cb;
+  Isolate* isolate;
   unsigned char *resizedImage;
   char *exception;
   char *format;
@@ -64,7 +65,7 @@ static void resize (uv_work_t *req) {
       newImageWidth = newImageHeight * imageAspectRatio;
     }
 
-    MagickResizeImage(magick_wand, newImageWidth, newImageHeight, LanczosFilter, 1.0);
+    MagickResizeImage(magick_wand, newImageWidth, newImageHeight, LanczosFilter);
     MagickCropImage(magick_wand, mgr->width, mgr->height, (newImageWidth - mgr->width) / 2, (newImageHeight - mgr->height) / 2);
     MagickResetImagePage(magick_wand, (const char *) NULL);
 
@@ -74,7 +75,7 @@ static void resize (uv_work_t *req) {
     // If autcrop == false, we want to scale the image, only stretching if both height and width are set
 
     // Don't stretch, make the image fit within the given parameter
-    if (!mgr->width == 0 || !mgr->height == 0) {
+    if (mgr->width == 0 || mgr->height == 0) {
       if (mgr->width == 0) {
         mgr->width = (mgr->height * imageAspectRatio);
       } else if (mgr->height == 0) {
@@ -83,7 +84,7 @@ static void resize (uv_work_t *req) {
     }
 
     if (mgr->width && mgr->height) {
-      MagickResizeImage(magick_wand, mgr->width, mgr->height, LanczosFilter, 1.0);
+      MagickResizeImage(magick_wand, mgr->width, mgr->height, LanczosFilter);
     }
   }
 
@@ -104,38 +105,43 @@ static void resize (uv_work_t *req) {
 }
 
 /* this is for the callback */
-static void postResize(uv_work_t *req) {
-  HandleScope scope;
+static void postResize(uv_work_t *req, int status) {
   struct magickReq *mgr = (struct magickReq *)req->data;
+  Isolate* isolate = mgr->isolate;
+  HandleScope scope(isolate);
 
-  Handle<Value> argv[3];
-  Local<Object> info = Object::New();
+  Local<Value> argv[3];
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<Object> info = Object::New(isolate);
 
   if (mgr->exception) {
-    argv[0] = Exception::Error(String::New(mgr->exception));
-    argv[1] = argv[2] = Undefined();
+    argv[0] = Exception::Error(String::NewFromUtf8(isolate, mgr->exception).ToLocalChecked());
+    argv[1] = Undefined(isolate);
+    argv[2] = Undefined(isolate);
     MagickRelinquishMemory(mgr->exception);
   } else {
-    argv[0] = Undefined();
-    Buffer *buf = Buffer::New(mgr->resizedImageLen + 1);
-    memcpy(Buffer::Data(buf), mgr->resizedImage, mgr->resizedImageLen);
-    argv[1] = buf->handle_;
-    Local<Integer> width = Integer::New(mgr->width);
-    Local<Integer> height = Integer::New(mgr->height);
-    info->Set(String::NewSymbol("width"), width);
-    info->Set(String::NewSymbol("height"), height);
+    argv[0] = Undefined(isolate);
+    MaybeLocal<Object> buf = Buffer::Copy(isolate, (const char*)mgr->resizedImage, mgr->resizedImageLen);
+    argv[1] = buf.ToLocalChecked();
+    info->Set(context,
+              String::NewFromUtf8(isolate, "width").ToLocalChecked(),
+              Integer::New(isolate, mgr->width)).Check();
+    info->Set(context,
+              String::NewFromUtf8(isolate, "height").ToLocalChecked(),
+              Integer::New(isolate, mgr->height)).Check();
     argv[2] = info;
   }
 
-  TryCatch try_catch;
+  Local<Function> cb = Local<Function>::New(isolate, mgr->cb);
+  TryCatch try_catch(isolate);
 
-  mgr->cb->Call(Context::GetCurrent()->Global(), 3, argv);
+  cb->Call(context, Null(isolate), 3, argv).IsEmpty();
 
   if (try_catch.HasCaught()) {
-    FatalException(try_catch);
+    node::FatalException(isolate, try_catch);
   }
 
-  mgr->cb.Dispose();
+  mgr->cb.Reset();
   MagickRelinquishMemory(mgr->resizedImage);
   if (mgr->format)
     free(mgr->format);
@@ -144,36 +150,43 @@ static void postResize(uv_work_t *req) {
   delete req;
 }
 
-Handle<Value> resizeAsync (const Arguments &args) {
-  HandleScope scope;
+void resizeAsync(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  HandleScope scope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+
   const char *usage = "Too few arguments: Usage: resize(imagefile, width, height, quality, format, autocrop, cb)";
   if (args.Length() != 7) {
-    return ThrowException(Exception::Error(String::New(usage)));
+    isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, usage).ToLocalChecked()));
+    return;
   }
 
-  String::Utf8Value name(args[0]);
-  String::Utf8Value format(args[4]);
-  int width = args[1]->Int32Value();
-  int height = args[2]->Int32Value();
-  int quality = args[3]->Int32Value();
+  String::Utf8Value name(isolate, args[0]);
+  String::Utf8Value format(isolate, args[4]);
+  int width = args[1]->Int32Value(context).ToChecked();
+  int height = args[2]->Int32Value(context).ToChecked();
+  int quality = args[3]->Int32Value(context).ToChecked();
 
-  bool autocrop = args[5]->BooleanValue();
+  bool autocrop = args[5]->BooleanValue(isolate);
 
   Local<Function> cb = Local<Function>::Cast(args[6]);
 
   if (width < 0 || height < 0) {
-    return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
+    isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid width/height arguments").ToLocalChecked()));
+    return;
   }
 
   if (quality < 0 || quality > 100) {
-    return ThrowException(Exception::Error(String::New("Invalid quality parameter")));
+    isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, "Invalid quality parameter").ToLocalChecked()));
+    return;
   }
 
   uv_work_t *req = new uv_work_t;
   struct magickReq *mgr = (struct magickReq *) calloc(1, sizeof(struct magickReq) + name.length());
   req->data = mgr;
 
-  mgr->cb = Persistent<Function>::New(cb);
+  mgr->cb.Reset(isolate, cb);
+  mgr->isolate = isolate;
   mgr->width = width;
   mgr->height = height;
   mgr->quality = quality;
@@ -184,7 +197,5 @@ Handle<Value> resizeAsync (const Arguments &args) {
 
   strncpy(mgr->imagefilepath, *name, name.length() + 1);
 
-  uv_queue_work(uv_default_loop(), req, resize, (uv_after_work_cb)postResize);
-
-  return Undefined();
+  uv_queue_work(uv_default_loop(), req, resize, postResize);
 }

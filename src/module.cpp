@@ -1,10 +1,9 @@
 #include "./magickwand.h"
 
-extern "C" void init (Handle<Object> target) {
-  HandleScope scope;
+void init(Local<Object> exports, Local<Value> module, void* priv) {
   MagickWandGenesis();
-  NODE_SET_METHOD(target, "resize", resizeAsync);
-  NODE_SET_METHOD(target, "thumbnail", thumbnailAsync);
+  NODE_SET_METHOD(exports, "resize", resizeAsync);
+  NODE_SET_METHOD(exports, "thumbnail", thumbnailAsync);
 }
 
-NODE_MODULE(magickwand, init)
+NODE_MODULE(NODE_GYP_MODULE_NAME, init)
