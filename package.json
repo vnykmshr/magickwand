@@ -1,16 +1,22 @@
-{ 
+{
     "name": "magickwand",
     "description": "native bindings for imagemagick convert",
-    "version": "0.0.10",
+    "version": "0.0.12",
     "author": "Qasim Zaidi <qasim@zaidi.me>",
-    "contributors" : [ 
+    "contributors" : [
       { "name": "Sameer Akhtar" },
       { "name": "Binayak Mishra" }
      ],
     "dependencies": {
     },
+    "devDependencies": {
+      "mocha": "^10.0.0"
+    },
     "repository": "git://github.com/qzaidi/magickwand.git",
     "main": "index",
+    "scripts": {
+      "test": "mocha -R spec ./test/test.js"
+    },
     "bugs": {
         "url": "https://github.com/qzaidi/magickwand/issues"
     },
@@ -19,5 +25,5 @@
             "type" : "MIT"
         }
     ],
-    "engines": { "node" : ">=0.6.0" }
+    "engines": { "node" : ">=0.10.0" }
 }

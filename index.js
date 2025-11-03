@@ -32,7 +32,7 @@ var magickwand = {
 
     options.autocrop = options.autocrop || false;
 
-    mgwnd.thumbnail(imagefile, args.width, args.height, args.quality,ss options.autocrop, cb);
+    mgwnd.thumbnail(imagefile, args.width, args.height, args.quality, options.autocrop, cb);
   }
 };
 
