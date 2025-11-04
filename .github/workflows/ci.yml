@@ -8,12 +8,13 @@ on:
 
 jobs:
   test:
-    name: Test on Node.js ${{ matrix.node-version }}
-    runs-on: macos-latest
+    name: Test on ${{ matrix.os }} - Node.js ${{ matrix.node-version }}
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
         node-version: [18.x, 20.x, 22.x]
 
     steps:
@@ -24,14 +25,27 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: Install ImageMagick
+    - name: Install ImageMagick (macOS)
+      if: runner.os == 'macOS'
       run: |
         brew install imagemagick pkg-config
 
+    - name: Install ImageMagick (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libmagickwand-dev pkg-config
+
+    - name: Install ImageMagick (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: |
+        choco install imagemagick.app -y --package-parameters="InstallDevelopmentHeaders=true"
+        choco install python -y
+
     - name: Verify ImageMagick installation
       run: |
-        magick --version || convert --version
-        MagickWand-config --version
+        magick --version
 
     - name: Install dependencies
       run: npm install
@@ -41,3 +55,7 @@ jobs:
 
     - name: Run tests
       run: npm test
+
+    - name: Run coverage (Ubuntu only)
+      if: runner.os == 'Linux' && matrix.node-version == '20.x'
+      run: npm run test:coverage

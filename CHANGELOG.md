@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - TBD
+
+### Added
+- **Windows platform support**: Full first-class support for Windows alongside macOS and Linux
+  - Windows-specific build configuration in `binding.gyp`
+  - Automatic ImageMagick discovery via Windows registry
+  - Support for multiple installation methods (Chocolatey, manual installer, custom paths)
+  - Comprehensive Windows troubleshooting documentation
+- CI/CD coverage for Windows: Added `windows-latest` to GitHub Actions matrix
+  - Tests all three platforms: macOS, Linux, Windows
+  - Node.js versions: 18.x, 20.x, 22.x
+  - Automated ImageMagick installation and verification
+- `tools/get_magick_root.py`: Windows registry discovery script
+  - Queries registry for ImageMagick installation path
+  - Falls back to `MAGICK_HOME` environment variable
+  - Searches common installation paths
+  - Provides helpful error messages with installation instructions
+
+### Changed
+- Updated platform support: `"os": ["darwin", "linux", "win32"]` in `package.json`
+- Enhanced README: Added Windows installation instructions
+  - Chocolatey installation (recommended primary method)
+  - Manual installer instructions
+  - Custom location configuration via `MAGICK_HOME`
+- Enhanced TROUBLESHOOTING: Added 8 Windows-specific troubleshooting sections
+  - ImageMagick installation issues
+  - node-gyp build errors
+  - Python and Visual Studio dependencies
+  - Library and DLL path issues
+  - Runtime loading errors
+- Unified CI workflow: Single matrix job covering all three platforms
+
+### Documentation
+- Windows installation methods documented with priority on Chocolatey
+- Windows-specific build requirements (Python, Visual Studio Build Tools)
+- Compatibility section updated: "Platforms: macOS, Linux, Windows"
+- Windows error messages and solutions added to troubleshooting guide
+
 ## [1.0.0] - 2025-11-04
 
 ### Added

@@ -35,6 +35,26 @@ brew install pkg-config imagemagick
 sudo apt-get install libmagickwand-dev
 ```
 
+**Windows** (using Chocolatey - Recommended):
+```powershell
+choco install imagemagick.app -y --package-parameters="InstallDevelopmentHeaders=true"
+choco install python -y
+choco install visualstudio2022-workload-vctools -y
+```
+
+**Windows** (Manual Installation):
+1. Download ImageMagick installer from [imagemagick.org](https://imagemagick.org/script/download.php#windows)
+2. Run the installer and ensure you select:
+   - ☑ Install development headers and libraries for C and C++
+   - ☑ Add application directory to your system path
+3. Install [Python](https://www.python.org/downloads/) and [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
+
+**Windows** (Custom Location):
+If ImageMagick is installed in a non-standard location, set `MAGICK_HOME`:
+```powershell
+setx MAGICK_HOME "C:\Path\To\ImageMagick"
+```
+
 **Note**: If you experience issues on macOS with OpenMP, install without it:
 ```bash
 brew install imagemagick --without-openmp
@@ -216,7 +236,7 @@ MagickWand provides significant performance benefits over child process-based so
 
 - **Node.js**: v10.0.0 and above (tested up to v24.x)
 - **ImageMagick**: v7.x (with backward compatibility for v6.x)
-- **Platforms**: macOS (darwin), Linux
+- **Platforms**: macOS (darwin), Linux, Windows
 
 ## Troubleshooting
 

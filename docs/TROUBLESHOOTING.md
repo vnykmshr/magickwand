@@ -188,6 +188,149 @@ nvm install 20
 nvm use 20
 ```
 
+## Windows-Specific Issues
+
+### "ImageMagick not found" during npm install
+
+**Cause**: ImageMagick not installed or development headers missing.
+
+**Solution**:
+
+1. Verify ImageMagick is installed:
+   ```powershell
+   magick --version
+   ```
+
+2. Check for development headers:
+   ```powershell
+   dir "C:\Program Files\ImageMagick-*\include\MagickWand\MagickWand.h"
+   dir "C:\Program Files\ImageMagick-*\lib\CORE_RL_*.lib"
+   ```
+
+3. If missing, reinstall with development headers (Chocolatey):
+   ```powershell
+   choco install imagemagick.app -y --package-parameters="InstallDevelopmentHeaders=true" --force
+   ```
+
+4. Or set `MAGICK_HOME` if installed in custom location:
+   ```powershell
+   setx MAGICK_HOME "C:\Program Files\ImageMagick-7.1.1-Q16-HDRI"
+   ```
+
+5. Rebuild native module:
+   ```powershell
+   npm rebuild
+   ```
+
+### node-gyp build errors on Windows
+
+**Error**: `Cannot find module 'msbuild'` or `MSBuild not found`
+
+**Solution**: Install Visual Studio Build Tools:
+
+```powershell
+choco install visualstudio2022-workload-vctools -y
+```
+
+Or download manually:
+https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022
+
+### Python not found during build
+
+**Error**: `Can't find Python executable "python"`
+
+**Solution**:
+
+```powershell
+choco install python -y
+```
+
+Or install from [python.org](https://www.python.org/downloads/) and ensure it's in PATH:
+```powershell
+python --version
+```
+
+### CORE_RL_*.lib not found
+
+**Error**: `fatal error LNK1104: cannot open file 'CORE_RL_MagickCore_.lib'`
+
+**Cause**: ImageMagick libraries not found or ImageMagick installed without development headers.
+
+**Solution**:
+
+1. Verify library files exist:
+   ```powershell
+   dir "C:\Program Files\ImageMagick-*\lib\*.lib"
+   ```
+
+2. If missing, reinstall ImageMagick with development headers:
+   ```powershell
+   choco install imagemagick.app -y --package-parameters="InstallDevelopmentHeaders=true" --force
+   ```
+
+3. If installed in custom location, set `MAGICK_HOME`:
+   ```powershell
+   setx MAGICK_HOME "C:\Your\Custom\Path\ImageMagick"
+   npm rebuild
+   ```
+
+### Windows registry not found
+
+**Error**: `ERROR: This script is for Windows only`
+
+**Cause**: Running on Windows but Python can't import winreg module.
+
+**Solution**: Ensure you're using Python for Windows (not WSL Python):
+```powershell
+python --version
+where python
+```
+
+Should show: `C:\Python3x\python.exe` (not `/usr/bin/python`)
+
+### Module fails to load at runtime
+
+**Error**: `The specified module could not be found` or DLL errors
+
+**Cause**: ImageMagick DLLs not in PATH.
+
+**Solution**:
+
+1. Verify ImageMagick bin directory is in PATH:
+   ```powershell
+   $env:PATH -split ';' | Select-String -Pattern "ImageMagick"
+   ```
+
+2. If missing, add to PATH:
+   ```powershell
+   setx PATH "$env:PATH;C:\Program Files\ImageMagick-7.1.1-Q16-HDRI"
+   ```
+
+3. Or reinstall ImageMagick with "Add to system path" option checked.
+
+4. Restart terminal/IDE for PATH changes to take effect.
+
+### Build succeeds but tests fail
+
+**Symptom**: `npm install` succeeds but `npm test` fails with image processing errors.
+
+**Solution**:
+
+1. Verify ImageMagick works standalone:
+   ```powershell
+   magick convert test.jpg -resize 100x100 output.jpg
+   ```
+
+2. Check ImageMagick version (v7.x required):
+   ```powershell
+   magick --version
+   ```
+
+3. Ensure development headers match installed version:
+   ```powershell
+   dir "C:\Program Files\ImageMagick-*\include"
+   ```
+
 ## Still Having Issues?
 
 1. Check existing [GitHub Issues](https://github.com/vnykmshr/magickwand/issues)
