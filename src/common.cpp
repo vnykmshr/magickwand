@@ -48,7 +48,7 @@ bool processImageDimensions(MagickWand *magick_wand, unsigned int *width, unsign
     if (useThumbnail) {
       MagickThumbnailImage(magick_wand, newImageWidth, newImageHeight);
     } else {
-      MagickResizeImage(magick_wand, newImageWidth, newImageHeight, LanczosFilter);
+      ResizeImage(magick_wand, newImageWidth, newImageHeight, LanczosFilter);
     }
 
     MagickCropImage(magick_wand, *width, *height, (newImageWidth - *width) / 2, (newImageHeight - *height) / 2);
@@ -72,7 +72,7 @@ bool processImageDimensions(MagickWand *magick_wand, unsigned int *width, unsign
       if (useThumbnail) {
         MagickThumbnailImage(magick_wand, *width, *height);
       } else {
-        MagickResizeImage(magick_wand, *width, *height, LanczosFilter);
+        ResizeImage(magick_wand, *width, *height, LanczosFilter);
       }
     }
   }

@@ -10,7 +10,27 @@
 #include <uv.h>
 #include <stdlib.h>
 #include <string.h>
-#include <MagickWand/MagickWand.h>
+
+// ImageMagick 7 uses MagickWand/, ImageMagick 6 uses wand/
+// Try ImageMagick 6 path first (lowercase), fallback to ImageMagick 7
+#if __has_include(<wand/MagickWand.h>)
+  #include <wand/MagickWand.h>
+  #define MAGICK_VERSION_6
+#else
+  #include <MagickWand/MagickWand.h>
+  #define MAGICK_VERSION_7
+#endif
+
+// API compatibility between ImageMagick 6 and 7
+// ImageMagick 6 MagickResizeImage takes 5 params (width, height, filter, blur)
+// ImageMagick 7 MagickResizeImage takes 4 params (width, height, filter)
+#ifdef MAGICK_VERSION_6
+  #define ResizeImage(wand, width, height, filter) \
+    MagickResizeImage(wand, width, height, filter, 1.0)
+#else
+  #define ResizeImage(wand, width, height, filter) \
+    MagickResizeImage(wand, width, height, filter)
+#endif
 
 using namespace node;
 using namespace v8;
