@@ -54,8 +54,11 @@ def get_imagemagick_root():
     # Strategy 2: Check MAGICK_HOME environment variable
     if 'MAGICK_HOME' in os.environ:
         root = os.environ['MAGICK_HOME']
+        sys.stderr.write(f'Checking MAGICK_HOME: {root}\n')
         if validate_imagemagick_root(root):
             return root
+        else:
+            sys.stderr.write(f'MAGICK_HOME validation failed for: {root}\n')
 
     # Strategy 3: Search common installation paths
     common_paths = [
@@ -117,16 +120,23 @@ def validate_imagemagick_root(path):
         bool: True if path contains ImageMagick with development headers
     """
     if not os.path.isdir(path):
+        sys.stderr.write(f'  Not a directory: {path}\n')
         return False
 
     # Check for required header files
     include_path = os.path.join(path, 'include', 'MagickWand', 'MagickWand.h')
     if not os.path.exists(include_path):
+        sys.stderr.write(f'  Header not found: {include_path}\n')
+        # List what's actually there
+        inc_dir = os.path.join(path, 'include')
+        if os.path.exists(inc_dir):
+            sys.stderr.write(f'  Contents of {inc_dir}: {os.listdir(inc_dir)}\n')
         return False
 
     # Check for required library files
     lib_path = os.path.join(path, 'lib')
     if not os.path.isdir(lib_path):
+        sys.stderr.write(f'  Lib directory not found: {lib_path}\n')
         return False
 
     # Look for core libraries (at least one should exist)
@@ -140,6 +150,10 @@ def validate_imagemagick_root(path):
         os.path.exists(os.path.join(lib_path, lib))
         for lib in required_libs
     )
+
+    if not has_lib:
+        sys.stderr.write(f'  No required libs found in {lib_path}\n')
+        sys.stderr.write(f'  Contents: {os.listdir(lib_path) if os.path.exists(lib_path) else "N/A"}\n')
 
     return has_lib
 

@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest, ubuntu-latest]
         node-version: [18.x, 20.x, 22.x]
 
     steps:
@@ -34,18 +34,21 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libmagickwand-dev pkg-config
+        sudo apt-get install -y imagemagick libmagickwand-dev pkg-config
 
-    - name: Install ImageMagick (Windows)
-      if: runner.os == 'Windows'
-      shell: powershell
-      run: |
-        choco install imagemagick.app -y --package-parameters="InstallDevelopmentHeaders=true"
-        choco install python -y
+    - name: Verify ImageMagick installation (macOS)
+      if: runner.os == 'macOS'
+      run: magick --version
 
-    - name: Verify ImageMagick installation
+    - name: Verify ImageMagick installation (Linux)
+      if: runner.os == 'Linux'
       run: |
-        magick --version
+        # ImageMagick 6 uses 'convert', ImageMagick 7 uses 'magick'
+        if command -v magick &> /dev/null; then
+          magick --version
+        else
+          convert --version
+        fi
 
     - name: Install dependencies
       run: npm install

@@ -54,10 +54,10 @@
         }],
         ['OS!="win" and OS!="mac"', {
           "libraries": [
-            "<!@(MagickWand-config --libs)"
+            "<!@(pkg-config --libs Wand)"
           ],
           "cflags": [
-            "<!@(MagickWand-config --cflags)"
+            "<!@(pkg-config --cflags Wand)"
           ]
         }]
       ]
