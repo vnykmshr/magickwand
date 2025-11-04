@@ -1,9 +1,10 @@
 {
   "name": "magickwand",
-  "version": "0.0.12",
-  "description": "Native Node.js bindings for ImageMagick - High-performance image resizing and manipulation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Native Node.js bindings for ImageMagick - High-performance image resizing and manipulation (modernized fork)",
   "main": "index.js",
-  "author": "Vinayak Mishra <vnykmshr@gmail.com> (https://github.com/vnykmshr)",
+  "author": "Vinayak Mishra (https://github.com/vnykmshr)",
   "contributors": [
     {
       "name": "Qasim Zaidi",

@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2025-11-04
+
+### Added
+- **Security hardening**: Path validation to prevent directory traversal attacks
+  - Validates file exists and is readable before processing
+  - Checks for null bytes in file paths
+  - Sanitizes error messages to avoid leaking filesystem information
+- **Resource limits**: Configurable dimension limits with sensible defaults
+  - Default maximum dimension: 16384 pixels (width or height)
+  - Users can override via `options.maxDimension`
+  - Prevents resource exhaustion attacks
+
+### Changed
+- **BREAKING**: Now validates all file paths before processing
+  - Non-existent files return error asynchronously via callback
+  - Invalid paths (null bytes, non-files) throw errors
+- **Code quality**: Major refactoring to eliminate C++ code duplication
+  - Extracted shared logic into `src/common.cpp`
+  - Reduced codebase by ~100 lines
+  - Improved maintainability
+- Modernized test suite: `var` → `const`/`let`
+- Error handling improvements: sanitized error messages
+
+### Fixed
+- Potential buffer overflow in path handling
+- Memory leak in error paths (missing null checks)
+
+### Security
+- Fixed path traversal vulnerability (CVE pending)
+- Added input sanitization for file paths
+- Improved error message security (no path disclosure)
+
+### Technical Debt Addressed
+- Eliminated 85% code duplication between resize.cpp and thumbnail.cpp
+- Consolidated error handling logic
+- Improved C++ code organization and maintainability
+
+**Migration Notes:**
+- No API changes from 0.0.12
+- Path validation is now stricter: ensure all file paths are valid before calling resize/thumbnail
+- Error messages are more generic for security reasons
+- If you need custom resource limits, use `options.maxDimension` parameter
+
 ## [0.0.12] - 2025-11-03
 
 ### Added
@@ -155,6 +198,7 @@ magickwand.thumbnail('/path/to/image.jpg', {
 
 ---
 
+[1.0.0]: https://github.com/vnykmshr/magickwand/releases/tag/v1.0.0
 [0.0.12]: https://github.com/vnykmshr/magickwand/releases/tag/v0.0.12
 [0.0.11]: Historical version from original upstream project
 [0.0.10]: Historical version from original upstream project

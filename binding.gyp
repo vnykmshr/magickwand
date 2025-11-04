@@ -2,7 +2,7 @@
   "targets": [
     {
       "target_name": "magickwand",
-       "sources": [ "src/module.cpp", "src/resize.cpp", "src/thumbnail.cpp" ],
+       "sources": [ "src/module.cpp", "src/common.cpp", "src/resize.cpp", "src/thumbnail.cpp" ],
        'libraries': [ '<!@(MagickWand-config --libs)' ],
        "conditions": [
         ['OS=="mac"', {

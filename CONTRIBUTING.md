@@ -49,7 +49,7 @@ Thank you for your interest in contributing to MagickWand! This document provide
 
 #### JavaScript
 - Use ES6+ syntax where appropriate
-- Follow the ESLint configuration (`.eslintrc.json`)
+- Follow the ESLint configuration (`eslint.config.js`)
 - Use 2 spaces for indentation
 - Use single quotes for strings
 - Add JSDoc comments for all public functions
@@ -156,13 +156,14 @@ node-gyp build
 
 ### Testing Against Different ImageMagick Versions
 
-Test against both ImageMagick 6 and 7 if possible:
+MagickWand v1.0.0+ is optimized for ImageMagick 7. If you need to test against ImageMagick 6 (legacy support):
+
 ```bash
-# ImageMagick 6
+# ImageMagick 6 (legacy)
 brew install imagemagick@6
 brew link imagemagick@6 --force
 
-# ImageMagick 7
+# ImageMagick 7 (recommended)
 brew unlink imagemagick@6
 brew install imagemagick
 ```

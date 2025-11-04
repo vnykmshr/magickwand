@@ -6,8 +6,8 @@ We release patches for security vulnerabilities for the following versions:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.0.12  | :white_check_mark: |
-| < 0.0.12| :x:                |
+| 1.0.0+  | :white_check_mark: |
+| < 1.0.0 | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -17,10 +17,11 @@ We take the security of magickwand seriously. If you discover a security vulnera
 
 **Please do NOT report security vulnerabilities through public GitHub issues.**
 
-Instead, please report security issues via email to:
+Instead, report security issues through:
 
-- **Email:** [Security contact from repository owner]
 - **GitHub Security Advisory:** https://github.com/vnykmshr/magickwand/security/advisories/new
+
+This ensures the issue is handled privately until a fix is available.
 
 ### What to Include
 

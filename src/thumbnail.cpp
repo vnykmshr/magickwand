@@ -15,13 +15,12 @@ typedef struct thumbnailReq {
   char imagefilepath[1];
 } ThumbnailReq;
 
-/* Resize image here */
+/* Thumbnail image here */
 static void thumbnail(uv_work_t *req) {
   ThumbnailReq *mgr = (ThumbnailReq *)req->data;
   ExceptionType severity;
   MagickWand *magick_wand = NewMagickWand();
   MagickBooleanType status;
-  float imageWidth, imageHeight, newImageWidth, newImageHeight, imageAspectRatio, canvasAspectRatio;
 
   status = MagickReadImage(magick_wand, mgr->imagefilepath);
 
@@ -31,64 +30,11 @@ static void thumbnail(uv_work_t *req) {
     return;
   }
 
-  // Get the image sizes
-  imageWidth = MagickGetImageWidth(magick_wand);
-  imageHeight = MagickGetImageHeight(magick_wand);
-  imageAspectRatio = (imageWidth * 1.0) / imageHeight;
-
-  // If autcrop == true, we want to scale the image, keeping proportions and then crop
-  if (mgr->autocrop) {
-
-    // If these are not set, we will remove the autocrop and let the code further down handle the rest
-    if (mgr->width == 0 && mgr->height == 0) {
-      mgr->autocrop = false;
-
-    } else if (mgr->width == 0 || mgr->height == 0) {
-
-      // If one of canvas height or width is not set, we will assume a square is wanted
-      if (mgr->width == 0) {
-        mgr->width = mgr->height;
-      } else if (mgr->height == 0) {
-        mgr->height = mgr->width;
-      }
-
-    }
-
-    canvasAspectRatio = (mgr->width * 1.0) / mgr->height;
-
-    if (imageAspectRatio < canvasAspectRatio) {
-      newImageWidth = mgr->width;
-      newImageHeight = newImageWidth / imageAspectRatio;
-    } else {
-      newImageHeight = mgr->height;
-      newImageWidth = newImageHeight * imageAspectRatio;
-    }
-
-    MagickThumbnailImage(magick_wand, newImageWidth, newImageHeight);
-    MagickCropImage(magick_wand, mgr->width, mgr->height, (newImageWidth - mgr->width) / 2, (newImageHeight - mgr->height) / 2);
-    MagickResetImagePage(magick_wand, (const char *) NULL);
-
-  }
-
-  if (mgr->autocrop == false) {
-    // If autcrop == false, we want to scale the image, only stretching if both height and width are set
-
-    // Don't stretch, make the image fit within the given parameter
-    if (mgr->width == 0 || mgr->height == 0) {
-      if (mgr->width == 0) {
-        mgr->width = (mgr->height * imageAspectRatio);
-      } else if (mgr->height == 0) {
-        mgr->height = (mgr->width / imageAspectRatio);
-      }
-    }
-
-    if (mgr->width && mgr->height) {
-      MagickThumbnailImage(magick_wand, mgr->width, mgr->height);
-    }
-  }
+  // Use shared dimension processing logic (thumbnail, not resize)
+  processImageDimensions(magick_wand, &mgr->width, &mgr->height, mgr->autocrop, true);
 
   if (mgr->quality)
-    MagickSetImageCompressionQuality(magick_wand,mgr->quality);
+    MagickSetImageCompressionQuality(magick_wand, mgr->quality);
 
   mgr->resizedImage = MagickGetImageBlob(magick_wand, &mgr->resizedImageLen);
 
@@ -106,28 +52,10 @@ static void postThumbnail(uv_work_t *req, int status) {
 
   Local<Value> argv[3];
   Local<Context> context = isolate->GetCurrentContext();
-  Local<Object> info = Object::New(isolate);
 
-  if (mgr->exception) {
-    argv[0] = Exception::Error(String::NewFromUtf8(isolate, mgr->exception).ToLocalChecked());
-    argv[1] = Undefined(isolate);
-    argv[2] = Undefined(isolate);
-    MagickRelinquishMemory(mgr->exception);
-  } else {
-    argv[0] = Undefined(isolate);
-    MaybeLocal<Object> buf = Buffer::Copy(isolate, (const char*)mgr->resizedImage, mgr->resizedImageLen);
-    argv[1] = buf.ToLocalChecked();
-    info->Set(context,
-              String::NewFromUtf8(isolate, "width").ToLocalChecked(),
-              Integer::New(isolate, mgr->width)).Check();
-    info->Set(context,
-              String::NewFromUtf8(isolate, "height").ToLocalChecked(),
-              Integer::New(isolate, mgr->height)).Check();
-    info->Set(context,
-              String::NewFromUtf8(isolate, "quality").ToLocalChecked(),
-              Integer::New(isolate, mgr->quality)).Check();
-    argv[2] = info;
-  }
+  // Use shared callback args builder (include quality for thumbnail)
+  buildCallbackArgs(isolate, mgr->exception, mgr->resizedImage, mgr->resizedImageLen,
+                    mgr->width, mgr->height, mgr->quality, argv);
 
   Local<Function> cb = Local<Function>::New(isolate, mgr->cb);
   TryCatch try_catch(isolate);
@@ -139,7 +67,9 @@ static void postThumbnail(uv_work_t *req, int status) {
   }
 
   mgr->cb.Reset();
-  MagickRelinquishMemory(mgr->resizedImage);
+  if (mgr->resizedImage) {
+    MagickRelinquishMemory(mgr->resizedImage);
+  }
   free(mgr);
 
   delete req;

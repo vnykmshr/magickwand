@@ -1,21 +1,22 @@
 # magickwand
 
-[![npm version](https://badge.fury.io/js/magickwand.svg)](https://www.npmjs.com/package/magickwand)
 [![Node.js Version](https://img.shields.io/node/v/magickwand.svg)](https://nodejs.org)
 [![CI](https://github.com/vnykmshr/magickwand/actions/workflows/ci.yml/badge.svg)](https://github.com/vnykmshr/magickwand/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **Note**: This is an independent fork of the original [magickwand](https://www.npmjs.com/package/magickwand) package (v0.0.11), modernized for Node.js v24 and ImageMagick 7. This version (v1.0.0) is not published to npm.
 
 Native Node.js bindings for ImageMagick - High-performance image resizing and manipulation using direct C API calls instead of spawning child processes.
 
 ## Features
 
-- ✨ **Native Performance**: Direct C API calls to ImageMagick (no child processes)
-- 🖼️ **Resize & Thumbnail**: Multiple resizing strategies with quality control
-- ✂️ **Auto-crop**: Smart cropping with gravity at center
-- 🎨 **Format Conversion**: Convert between image formats (JPEG, PNG, etc.)
-- 📐 **Aspect Ratio**: Automatic aspect ratio preservation
-- ⚡ **Modern**: Built for Node.js v10+ with ImageMagick 7 support
-- ✅ **Well-tested**: Comprehensive test suite with 15+ tests
+- **Native Performance**: Direct C API calls to ImageMagick (no child processes)
+- **Resize & Thumbnail**: Multiple resizing strategies with quality control
+- **Auto-crop**: Smart cropping with gravity at center
+- **Format Conversion**: Convert between image formats (JPEG, PNG, etc.)
+- **Aspect Ratio**: Automatic aspect ratio preservation
+- **Modern**: Built for Node.js v10+ with ImageMagick 7 support
+- **Well-tested**: Comprehensive test suite with 36 tests and 100% coverage
 
 ## Requirements
 
@@ -41,16 +42,23 @@ brew install imagemagick --without-openmp
 
 ## Installation
 
-```bash
-npm install magickwand
-```
+**Important**: The npm package `magickwand` is the original version (v0.0.11) and is outdated. This fork (v1.0.0) must be installed from source.
 
-### Building from Source
+### Install from GitHub
 
 ```bash
+# Clone this repository
 git clone https://github.com/vnykmshr/magickwand.git
 cd magickwand
+
+# Install dependencies and build native module
 npm install
+```
+
+Or install directly from GitHub in your project:
+
+```bash
+npm install https://github.com/vnykmshr/magickwand.git
 ```
 
 ## Usage
@@ -153,6 +161,7 @@ Resize an image with various options.
   - `quality` (number): JPEG quality 1-100 (0 = default)
   - `format` (string): Output format ('png', 'jpg', etc.)
   - `autocrop` (boolean): Enable smart cropping (default: false)
+  - `maxDimension` (number): Override default max dimension limit (default: 16384)
 - `callback` (Function): `(err, data, info) => {}`
   - `err`: Error object or null
   - `data`: Buffer containing image data
@@ -166,6 +175,16 @@ Create an optimized thumbnail (better compression than resize).
 
 **Returns:** Callback with `info` object containing `{ width, height, quality }`
 
+## Security
+
+MagickWand v1.0.0+ includes built-in security protections:
+
+- Path validation ensures files exist and are readable before processing
+- Resource limits prevent DoS attacks (default max dimension: 16384 pixels)
+- Custom limits can be set via the `maxDimension` option
+
+See [SECURITY.md](SECURITY.md) for vulnerability reporting.
+
 ## Use as Express/Connect Middleware
 
 See [examples/cdn.js](examples/cdn.js) for an example of using magickwand as middleware for dynamic image resizing in Express.
@@ -178,11 +197,14 @@ npm test
 
 Runs comprehensive test suite covering:
 - Error handling (missing files, invalid params)
+- Security features (path validation, resource limits)
 - Resize operations with various options
 - Aspect ratio preservation
 - Format conversion
 - Auto-crop functionality
 - Thumbnail generation
+
+See [TEST_IMPROVEMENTS.md](TEST_IMPROVEMENTS.md) for detailed test suite documentation and coverage metrics.
 
 ## Performance
 
@@ -198,6 +220,10 @@ MagickWand provides significant performance benefits over child process-based so
 - **ImageMagick**: v7.x (with backward compatibility for v6.x)
 - **Platforms**: macOS (darwin), Linux
 
+## Troubleshooting
+
+Having issues? See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common problems and solutions.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
@@ -212,19 +238,25 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 MIT
 
-## Credits
+## Project Status
 
-This project was originally created by [Qasim Zaidi](https://github.com/qzaidi) (2012-2015) and is now independently maintained with significant modernization.
+This is an **independent fork** of the original [magickwand](https://www.npmjs.com/package/magickwand) package with significant modernization:
 
-**Current Maintainer:**
-- [Vinayak Mishra](https://github.com/vnykmshr) - Modernization for Node.js v24 and ImageMagick 7
+**Original Package** (v0.0.11 on npm):
+- Created by [Qasim Zaidi](https://github.com/qzaidi) (2012-2015)
+- Last updated 2015
+- Node.js v0.x - v4.x era
+- ImageMagick 6
 
-**Original Contributors:**
-- Qasim Zaidi (original author)
-- Sameer Akhtar
-- Binayak Mishra
+**This Fork** (v1.0.0, GitHub only):
+- Modernized for Node.js v10 - v24
+- Updated for ImageMagick 7
+- Security hardening (path validation, resource limits)
+- 100% test coverage
+- Refactored C++ code
+- Not published to npm
 
-**Project Status:** This is an independent continuation of the original project with major updates for modern Node.js and ImageMagick versions.
+**Note**: If you install `magickwand` from npm, you will get the old v0.0.11 version. This modernized version must be installed from GitHub (see Installation section above).
 
 ## Related Projects
 

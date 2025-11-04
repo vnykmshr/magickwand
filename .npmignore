@@ -1,1 +1,45 @@
+# Build artifacts
 build/
+*.node
+
+# Tests
+test/
+coverage/
+.nyc_output/
+
+# Development documentation
+TEST_IMPROVEMENTS.md
+TROUBLESHOOTING.md
+CONTRIBUTING.md
+
+# Examples
+examples/
+
+# CI/CD
+.github/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Git
+.git/
+.gitignore
+.gitattributes
