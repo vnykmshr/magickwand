@@ -4,7 +4,7 @@
 [![CI](https://github.com/vnykmshr/magickwand/actions/workflows/ci.yml/badge.svg)](https://github.com/vnykmshr/magickwand/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Note**: This is an independent fork of the original [magickwand](https://www.npmjs.com/package/magickwand) package (v0.0.11), modernized for Node.js v24 and ImageMagick 7. This version (v1.0.0) is not published to npm.
+> **Note**: This is an independent fork of the original [magickwand](https://www.npmjs.com/package/magickwand) package (v0.0.11), modernized for Node.js v24 and ImageMagick 7. This version (v1.1.0) is not published to npm.
 
 Native Node.js bindings for ImageMagick - High-performance image resizing and manipulation using direct C API calls instead of spawning child processes.
 
@@ -62,7 +62,7 @@ brew install imagemagick --without-openmp
 
 ## Installation
 
-**Important**: The npm package `magickwand` is the original version (v0.0.11) and is outdated. This fork (v1.0.0) must be installed from source.
+**Important**: The npm package `magickwand` is the original version (v0.0.11) and is outdated. This fork (v1.1.0) must be installed from source.
 
 ### Install from GitHub
 
@@ -266,7 +266,7 @@ This is an **independent fork** of the original [magickwand](https://www.npmjs.c
 - Node.js v0.x - v4.x era
 - ImageMagick 6
 
-**This Fork** (v1.0.0, GitHub only):
+**This Fork** (v1.1.0, GitHub only):
 - Modernized for Node.js v10 - v24
 - Updated for ImageMagick 7
 - Security hardening (path validation, resource limits)
