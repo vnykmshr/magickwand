@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-11-04
+
+### Fixed
+- **ImageMagick 6/7 compatibility**: Added automatic version detection and API compatibility layer
+  - Auto-detects header paths using `__has_include()`: `wand/MagickWand.h` (v6) vs `MagickWand/MagickWand.h` (v7)
+  - Compatibility macro `ResizeImage()` handles API differences transparently
+  - ImageMagick 6: `MagickResizeImage(wand, w, h, filter, blur)` - 5 parameters
+  - ImageMagick 7: `MagickResizeImage(wand, w, h, filter)` - 4 parameters
+  - Same codebase now compiles and runs on both major ImageMagick versions
+
+### Changed
+- CI simplified to macOS and Ubuntu only (Windows removed due to Chocolatey header installation issues)
+- CI now tests ImageMagick 7 on macOS and ImageMagick 6 on Ubuntu
+- Updated GitHub Actions: checkout v4→v5, setup-node v4→v6
+- Added diagnostic logging to Windows discovery script for local builds
+
+### Documentation
+- Added comprehensive 369-line technical blog post covering architecture, design decisions, and production deployment
+
 ## [1.1.0] - 2025-11-04
 
 ### Added
