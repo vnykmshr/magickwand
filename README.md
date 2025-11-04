@@ -183,7 +183,7 @@ MagickWand v1.0.0+ includes built-in security protections:
 - Resource limits prevent DoS attacks (default max dimension: 16384 pixels)
 - Custom limits can be set via the `maxDimension` option
 
-See [SECURITY.md](SECURITY.md) for vulnerability reporting.
+See [SECURITY.md](docs/SECURITY.md) for vulnerability reporting.
 
 ## Use as Express/Connect Middleware
 
@@ -204,8 +204,6 @@ Runs comprehensive test suite covering:
 - Auto-crop functionality
 - Thumbnail generation
 
-See [TEST_IMPROVEMENTS.md](TEST_IMPROVEMENTS.md) for detailed test suite documentation and coverage metrics.
-
 ## Performance
 
 MagickWand provides significant performance benefits over child process-based solutions:
@@ -222,13 +220,13 @@ MagickWand provides significant performance benefits over child process-based so
 
 ## Troubleshooting
 
-Having issues? See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common problems and solutions.
+Having issues? See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for common problems and solutions.
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 ## Changelog
 
