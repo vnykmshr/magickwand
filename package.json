@@ -52,7 +52,7 @@
     "install": "node-gyp rebuild",
     "test": "mocha -R spec ./test/test.js",
     "test:coverage": "c8 --reporter=text --reporter=html npm test",
-    "lint": "eslint index.js test/"
+    "lint": "eslint index.js test/ examples/"
   },
   "devDependencies": {
     "c8": "^10.1.3",
